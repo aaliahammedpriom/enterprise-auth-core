@@ -1,7 +1,7 @@
 // src/modules/auth/schemas/auth-user.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { AuthUserRole, AuthUserStatus } from './auth-schema.enum';
+import { AuthUserRole, AuthUserStatus } from './auth-enum.user';
 
 export type AuthUserDocument = HydratedDocument<AuthUser>;
 
