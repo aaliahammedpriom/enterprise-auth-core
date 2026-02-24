@@ -19,14 +19,17 @@ export class AuthUser {
   @Prop({ type: String, default: AuthUserStatus.Active })
   status: string;
 
-  @Prop({ type: Boolean, default: false, select: false })
-  otp: boolean;
+  @Prop({ type: String, default: null, select: false })
+  otp: string;
 
   @Prop({ type: Date, default: null, select: false })
   otpExpiresAt: Date;
 
-  @Prop({ type: Boolean, default: false, select: false })
-  isOtpVerified: boolean;
+  @Prop({type : Number, default:0, select:false})
+  otpAttempts:number;
+
+  @Prop({type: Date , default:null , select: false})
+  otpBlockedUntil: Date
 
   @Prop({ type: String, default: null, select: false })
   refreshToken: string;
@@ -34,14 +37,11 @@ export class AuthUser {
   @Prop({ type: Date, default: null, select: false })
   passwordChangedAt: Date;
 
+  @Prop({ type: Boolean, default: false, select: false })
+  needPasswordChange: boolean
+
   @Prop({ type: Boolean, default: false })
   isVerified: boolean;
-
-  @Prop({ type: String, default: null, select: false })
-  verificationToken: string;
-
-  @Prop({ type: Date, default: null, select: false })
-  verificationExpiresAt: Date;
 
   @Prop({ type: Boolean, default: false })
   isDeleted: boolean;
