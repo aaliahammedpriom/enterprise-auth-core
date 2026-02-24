@@ -6,6 +6,9 @@ import { AuthRegisterDto } from '../dto/auth-register.dto';
 import bcrypt from 'bcrypt'
 import { AuthVerifyDto } from '../dto/auth-verify.dto';
 import { AuthResendOtpDto } from '../dto/auth-resend-verify-code.dto';
+import { AuthLoginDto } from '../dto/auth-login.dto';
+import { JwtService } from "@nestjs/jwt"
+import { ConfigService } from '@nestjs/config';
 interface UpdatedData {
     email: string;
     password: string;
@@ -15,7 +18,11 @@ interface UpdatedData {
 }
 @Injectable()
 export class AuthService {
-    constructor(@InjectModel(AuthUser.name) private authUserModel: Model<AuthUser>) { }
+    constructor(
+        @InjectModel(AuthUser.name) private authUserModel: Model<AuthUser>,
+        private jwtService: JwtService,
+        private configService: ConfigService,
+    ) { }
 
 
     // REGITER AUTH
@@ -178,4 +185,36 @@ export class AuthService {
         };
     }
 
+    // LOGIN 
+    async authLogin(authLoginDto: AuthLoginDto) {
+        const find = await this.authUserModel.findOne({ email: authLoginDto.email }).select('+password')
+
+        if (!find) throw new NotFoundException("User Not Found")
+        if (!find.isVerified) throw new BadRequestException("Please Verify your email before login")
+        if (find.status && find.status === "blocked") throw new BadRequestException("Your account has been blocked")
+        if (find.isDeleted) throw new BadRequestException("Your account has been deleted")
+
+        const isMatch = await bcrypt.compare(authLoginDto.password, find.password)
+        if (!isMatch) throw new BadRequestException("Invalid Password")
+
+        const payload = { _id: find._id, email: find.email, role: find.role }
+        const accessToken = await this.jwtService.signAsync(payload)
+        const refreshToken = await this.jwtService.signAsync(payload, {
+            secret: this.configService.get<string>('REFRESH_SECRET'),
+            expiresIn: this.configService.get<any>('REFRESH_EXPIRE') || '7d',
+        });
+        console.log("Login Secret:", this.configService.get('ACCESS_SECRET'));
+
+        await this.authUserModel.updateOne(
+            { _id: find._id },
+            {
+                $set: {
+                    refreshToken
+                }
+            }
+        )
+
+        return { find, accessToken, refreshToken };
+
+    }
 }

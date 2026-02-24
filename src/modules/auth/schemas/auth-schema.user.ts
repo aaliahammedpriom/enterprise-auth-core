@@ -50,6 +50,5 @@ export class AuthUser {
 export const AuthUserSchema = SchemaFactory.createForClass(AuthUser);
 
 // Optional: indexes for fast lookup
-AuthUserSchema.index({ email: 1 });
 AuthUserSchema.index({ role: 1 });
 AuthUserSchema.index({ status: 1 });
