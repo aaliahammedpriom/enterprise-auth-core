@@ -7,7 +7,8 @@ import { AuthResendOtpDto } from '../dto/auth-resend-verify-code.dto';
 import { AuthLoginDto } from '../dto/auth-login.dto';
 import type { Request, Response } from 'express';
 import { AuthUser } from '../schemas/auth-schema.user';
-import { JwtAuthGuard } from '../jwt-auth.guard';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { JwtRefreshGuard } from 'src/common/guards/jwt-refresh.guard';
 interface UserWithToken extends AuthUser {
     accessToken: string;
 }
@@ -62,7 +63,6 @@ export class AuthController {
 
     @Post('logout')
     async logout(@Res({ passthrough: true }) res: Response) {
-        // Cookie clear করা
         res.clearCookie('accessToken', {
             httpOnly: true,
             secure: process.env.IS_PRODUCTION === 'production',
@@ -80,9 +80,38 @@ export class AuthController {
         return { message: 'Logged out successfully' };
     }
 
+    @UseGuards(JwtRefreshGuard)
+    @Post('refresh')
+    async refreshToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+        const { accessToken, refreshToken } = await this.authService.refreshToken(req.user)
+
+        res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            sameSite: process.env.IS_PRODUCTION ? "none" : "lax",
+            secure: process.env.IS_PRODUCTION === "production",
+            path: "/",
+            maxAge: process.env.ACCESS_EXPIRE_DAY as any * 24 * 60 * 60 * 1000,
+        });
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            sameSite: process.env.IS_PRODUCTION ? "none" : "lax",
+            secure: process.env.IS_PRODUCTION === "production",
+            path: "/",
+            maxAge: process.env.REFRESH_EXPIRE_DAY as any * 24 * 60 * 60 * 1000,
+        });
+        // const userWithToken: UserWithToken = {
+        //     ...find.toObject(),
+        //     accessToken,
+        // };
+
+        return { accessToken: accessToken }
+
+    }
+
+
     @UseGuards(JwtAuthGuard)
     @Post('me')
-    getAuthUser(@Req() req: Request){
+    getAuthUser(@Req() req: Request) {
         console.log(req.user)
     }
 

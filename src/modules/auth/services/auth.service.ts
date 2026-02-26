@@ -203,18 +203,41 @@ export class AuthService {
             secret: this.configService.get<string>('REFRESH_SECRET'),
             expiresIn: this.configService.get<any>('REFRESH_EXPIRE') || '7d',
         });
-        console.log("Login Secret:", this.configService.get('ACCESS_SECRET'));
+        const hasRefreshToken = await bcrypt.hash(refreshToken, 12)
 
         await this.authUserModel.updateOne(
             { _id: find._id },
             {
                 $set: {
-                    refreshToken
+                    refreshToken: hasRefreshToken
                 }
             }
         )
 
         return { find, accessToken, refreshToken };
+
+    }
+
+    // REFRESH TOKEN
+    async refreshToken(authRefreshUser) {
+        const payload = { _id: authRefreshUser._id, email: authRefreshUser.email, role: authRefreshUser.role }
+        const accessToken = await this.jwtService.signAsync(payload)
+        const refreshToken = await this.jwtService.signAsync(payload, {
+            secret: this.configService.get<string>('REFRESH_SECRET'),
+            expiresIn: this.configService.get<any>('REFRESH_EXPIRE') || '7d',
+        });
+        const hasRefreshToken = await bcrypt.hash(refreshToken, 12)
+
+        await this.authUserModel.updateOne(
+            { _id: authRefreshUser._id },
+            {
+                $set: {
+                    refreshToken: hasRefreshToken
+                }
+            }
+        )
+
+        return { accessToken, refreshToken };
 
     }
 }
