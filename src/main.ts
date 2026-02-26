@@ -3,10 +3,14 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import compression from 'compression';
 import helmet from 'helmet';
-import cookieParser = require('cookie-parser'); 
+import cookieParser = require('cookie-parser');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Set global prefix for all routes
+  app.setGlobalPrefix('api/v1');
+
 
   // Security middleware
   app.use(helmet());
